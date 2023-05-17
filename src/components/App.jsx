@@ -22,10 +22,6 @@ export function App() {
   const [images, setImages] = useState([]);
   const [status, setStatus] = useState(STATUS.IDLE);
 
-  const handleSubmit = queryFromForm => {
-    setQuery(queryFromForm);
-  };
-
   const handleClickLoadMore = () => {
     setPage(prevState => prevState + 1);
   };
@@ -54,7 +50,7 @@ export function App() {
           toast.warn(
             `It's the end of the collection on your request by key "${query}"!`
           );
-          return setStatus(STATUS.REJECTED);
+          return setStatus(STATUS.RESOLVED);
         }
 
         if (page > 1) {
@@ -75,12 +71,11 @@ export function App() {
 
   return (
     <>
-      <Searchbar className="Searchbar" onSummit={handleSubmit} />
+      <Searchbar className="Searchbar" onSummit={setQuery} />
       {status === STATUS.PENDING && <Loader />}
-      {images.length !== 0 &&
-        (status === STATUS.RESOLVED || status === STATUS.REJECTED) && (
-          <ImageGallery Images={images} />
-        )}
+      {images.length !== 0 && status === STATUS.RESOLVED && (
+        <ImageGallery Images={images} />
+      )}
       {status === STATUS.RESOLVED && <Button onClick={handleClickLoadMore} />}
       {status === STATUS.REJECTED && <ToastContainer />}
     </>
