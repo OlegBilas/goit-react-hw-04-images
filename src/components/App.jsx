@@ -36,8 +36,8 @@ export function App() {
   }, [query]);
 
   useEffect(() => {
-    if (query === '') {
-      //запит по тому ж самому ключовому слову при незмінній page
+    //пустий запит
+    if (query.trim() === '') {
       return;
     }
 
@@ -45,8 +45,16 @@ export function App() {
 
     fetchImages(query, page)
       .then(responce => {
-        if (responce.length === 0) {
+        if (responce.length === 0 && page === 1) {
           return Promise.reject();
+        }
+
+        if (responce.length === 0 && page > 1) {
+          // кінець колекції
+          toast.warn(
+            `It's the end of the collection on your request by key "${query}"!`
+          );
+          return setStatus(STATUS.REJECTED);
         }
 
         if (page > 1) {
@@ -61,7 +69,7 @@ export function App() {
       })
       .catch(() => {
         setStatus(STATUS.REJECTED);
-        toast.warn("We didn't find any images on your request!");
+        toast.error("We didn't find any images on your request!");
       });
   }, [query, page]);
 
@@ -69,10 +77,11 @@ export function App() {
     <>
       <Searchbar className="Searchbar" onSummit={handleSubmit} />
       {status === STATUS.PENDING && <Loader />}
-      {status === STATUS.RESOLVED && <ImageGallery Images={images} />}
-      {images.length !== 0 && status === STATUS.RESOLVED && (
-        <Button onClick={handleClickLoadMore} />
-      )}
+      {images.length !== 0 &&
+        (status === STATUS.RESOLVED || status === STATUS.REJECTED) && (
+          <ImageGallery Images={images} />
+        )}
+      {status === STATUS.RESOLVED && <Button onClick={handleClickLoadMore} />}
       {status === STATUS.REJECTED && <ToastContainer />}
     </>
   );
