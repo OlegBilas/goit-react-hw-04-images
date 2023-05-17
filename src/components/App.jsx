@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,67 +9,66 @@ import Loader from './Loader';
 import ImageGallery from './ImageGallery';
 import Button from './Button';
 
-export class App extends Component {
-  state = {
-    query: '',
-    page: 1,
-    images: [],
-    status: 'idle',
+const STATUS = {
+  IDLE: 'idle',
+  PENDING: 'pending',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+};
+
+export function App() {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState(STATUS.IDLE);
+
+  const handleSubmit = queryFromForm => {
+    setQuery(queryFromForm);
   };
 
-  handleSubmit = query => {
-    this.setState(prevState => {
-      if (prevState.query !== query) {
-        return { query, page: 1 };
-      }
-    });
+  const handleClickLoadMore = () => {
+    setPage(prevState => prevState + 1);
   };
 
-  handleClickLoadMore = () => {
-    this.setState(prevState => {
-      return { page: prevState.page + 1 };
-    });
-  };
+  //запит по новому ключовому слову
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
-  componentDidUpdate(prevProps, prevState) {
-    let { query, page } = this.state;
+  useEffect(() => {
+    let imagesForState;
+    setStatus(STATUS.PENDING);
+    fetchImages(query, page)
+      .then(responce => {
+        if (responce.length === 0) {
+          return Promise.reject();
+        }
 
-    if (prevState.query !== query || prevState.page !== page) {
-      this.setState({ status: 'pending' });
-      fetchImages(query, page)
-        .then(images => {
-          if (images.length === 0) {
-            return Promise.reject();
-          }
+        if (page > 1) {
+          // запит по тому ж самому ключовому слову
+          imagesForState = [...images, ...responce];
+        } else {
+          imagesForState = responce;
+        }
 
-          if (prevState.query === query) {
-            // запит по тому ж самому ключовому слову
-            images = [...prevState.images, ...images];
-          }
+        setImages(imagesForState);
+        setStatus(STATUS.RESOLVED);
+      })
+      .catch(() => {
+        setStatus(STATUS.REJECTED);
+        toast.warn("We didn't find any images on your request!");
+      });
+  }, [query, page]);
 
-          this.setState({
-            images,
-            status: 'resolved',
-          });
-        })
-        .catch(() => {
-          this.setState({ status: 'rejected' });
-          toast.warn("We didn't find any images on your request!");
-        });
-    }
-  }
-  render() {
-    const { status, images } = this.state;
-    return (
-      <>
-        <Searchbar className="Searchbar" onSummit={this.handleSubmit} />
-        {status === 'pending' && <Loader />}
-        {status === 'resolved' && <ImageGallery Images={images} />}
-        {images.length !== 0 && status === 'resolved' && (
-          <Button onClick={this.handleClickLoadMore} />
-        )}
-        {status === 'rejected' && <ToastContainer />}
-      </>
-    );
-  }
+  return (
+    <>
+      <Searchbar className="Searchbar" onSummit={handleSubmit} />
+      {status === STATUS.PENDING && <Loader />}
+      {status === STATUS.RESOLVED && <ImageGallery Images={images} />}
+      {images.length !== 0 && status === STATUS.RESOLVED && (
+        <Button onClick={handleClickLoadMore} />
+      )}
+      {status === STATUS.REJECTED && <ToastContainer />}
+    </>
+  );
 }
