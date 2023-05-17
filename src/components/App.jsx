@@ -37,6 +37,7 @@ export function App() {
 
   useEffect(() => {
     if (query === '') {
+      //запит по тому ж самому ключовому слову при незмінній page
       return;
     }
 
@@ -48,16 +49,15 @@ export function App() {
           return Promise.reject();
         }
 
-        let imagesForState;
         if (page > 1) {
-          // запит по тому ж самому ключовому слову
-          imagesForState = [...images, ...responce];
+          // це був запит по тому ж самому ключовому слову
+          setImages(prevState => [...prevState, ...responce]);
         } else {
-          imagesForState = responce;
+          // запит по новому ключовому слову
+          setImages(responce);
         }
 
         setStatus(STATUS.RESOLVED);
-        setImages(imagesForState);
       })
       .catch(() => {
         setStatus(STATUS.REJECTED);
