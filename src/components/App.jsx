@@ -36,14 +36,19 @@ export function App() {
   }, [query]);
 
   useEffect(() => {
-    let imagesForState;
+    if (query === '') {
+      return;
+    }
+
     setStatus(STATUS.PENDING);
+
     fetchImages(query, page)
       .then(responce => {
         if (responce.length === 0) {
           return Promise.reject();
         }
 
+        let imagesForState;
         if (page > 1) {
           // запит по тому ж самому ключовому слову
           imagesForState = [...images, ...responce];
@@ -51,8 +56,8 @@ export function App() {
           imagesForState = responce;
         }
 
-        setImages(imagesForState);
         setStatus(STATUS.RESOLVED);
+        setImages(imagesForState);
       })
       .catch(() => {
         setStatus(STATUS.REJECTED);

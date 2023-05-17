@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
 
-export default function ImageGalleryItem({ id, webformatURL, largeImageURL }) {
+export default function ImageGalleryItem({
+  Card: { id, webformatURL, largeImageURL },
+}) {
   const [showModal, setShowModal] = useState(false);
-
   const toggleModal = () => setShowModal(!showModal);
 
   return (
